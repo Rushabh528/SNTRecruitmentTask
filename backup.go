@@ -19,6 +19,8 @@ var (
 	logFile          *os.File
 	previousLogPath  string
 	sharedBackupName string
+	rootDir          string
+	loggerFormat     string
 )
 
 func main() {
@@ -27,12 +29,17 @@ func main() {
 	flag.BoolVar(&share, "share", false, "Share the backed-up directory")
 	flag.StringVar(&filesToSend, "files-to-send", "", "Comma-separated list of files to send")
 	flag.BoolVar(&previousLogs, "previous-logs", false, "Include previous backup logs in shared backup")
+	flag.StringVar(&rootDir, "root-dir", "/default/root/dir", "Root directory for the backup")
+	flag.StringVar(&loggerFormat, "logger-format", "2006-01-02_15-04-05", "Format of the logger file in the backup directory")
 	flag.Parse()
 
 	if sourceDir == "" || destinationDir == "" {
-		fmt.Println("Usage: backup -source [source directory] -destination [destination directory] [-share] [-files-to-send=file1,file2] [-previous-logs]")
+		fmt.Println("Usage: backup -source [source directory] -destination [destination directory] [-share] [-files-to-send=file1,file2] [-previous-logs] [-root-dir=root_dir] [-logger-format=format]")
 		os.Exit(1)
 	}
+
+	// Set root directory for the backup
+	rootDir = filepath.Clean(rootDir)
 
 	// Initialize logger
 	initLogger(destinationDir)
@@ -51,7 +58,7 @@ func main() {
 
 func shareBackup(sourceDir, destinationDir string) error {
 	// Construct shared backup name
-	sharedBackupName = fmt.Sprintf("backup_%s", time.Now().Format("20060102150405"))
+	sharedBackupName = fmt.Sprintf("backup_%s", time.Now().Format(loggerFormat))
 
 	// Create destination directory if it doesn't exist
 	if _, err := os.Stat(destinationDir); os.IsNotExist(err) {
